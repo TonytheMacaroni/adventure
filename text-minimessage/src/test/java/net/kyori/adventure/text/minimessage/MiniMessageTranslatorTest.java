@@ -23,6 +23,8 @@
  */
 package net.kyori.adventure.text.minimessage;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.kyori.adventure.identity.Identity;
@@ -149,12 +151,54 @@ public class MiniMessageTranslatorTest extends AbstractTest {
     );
   }
 
+  @Test
+  public void testRecursiveArguments() {
+    assertEquals(
+      Component.text("Kezz is cool!"),
+      this.translate(
+        Component.translatable(
+          "<arg:0> is <arg:1>!",
+          Component.translatable(
+            "<arg:0>",
+            Component.text("Kezz")
+          ),
+          Component.translatable(
+            "<arg:0>",
+            Component.translatable(
+              "<arg:0>",
+              Component.text("cool")
+            )
+          )
+        )
+      )
+    );
+  }
+
+  @Test
+  public void testChildren() {
+    List<Component> children1 = new ArrayList<>();
+    children1.add(Component.text("cool!"));
+
+    List<Component> children2 = new ArrayList<>();
+    children2.add(Component.translatable("<arg:0>", Component.text("cool!")));
+
+    assertEquals(
+      Component.text("Kezz is ").children(children1),
+      this.translate(Component
+        .translatable(
+          "<arg:0> is ",
+          Component.text("Kezz"))
+        .children(children2)
+      )
+    );
+  }
+
   @AfterAll
   public static void afterAll() {
     GlobalTranslator.translator().removeSource(TRANSLATOR);
   }
 
   private Component translate(final TranslatableComponent component) {
-    return GlobalTranslator.translator().translate(component, LOCALE);
+    return GlobalTranslator.render(component, LOCALE);
   }
 }
